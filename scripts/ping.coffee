@@ -22,5 +22,6 @@ module.exports = (robot) ->
       msg.send "Goodbye, cruel world."
       process.exit 0
     else
+      msg.reply "current user #{msg.envelope.user}"
       msg.send "You do not have permission to kill me"
 
