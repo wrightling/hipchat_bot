@@ -22,6 +22,7 @@ module.exports = (robot) ->
       msg.send "Goodbye, cruel world."
       process.exit 0
     else
-      msg.reply "current user #{msg.envelope.user}"
+      roles = msg.envelope.user.roles
+      msg.send "User #{msg.envelope.user.id} has roles #{roles}"
       msg.send "You do not have permission to kill me"
 
