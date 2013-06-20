@@ -69,6 +69,8 @@ module.exports = (robot) ->
           if msg.message.user.id.toString() in admins
             user.roles.push(newRole)
             msg.reply "Ok, #{name} has the '#{newRole}' role."
+          else
+            msg.reply "You do not have permission to assign a role"
 
   robot.respond /@?(.+) (doesn't have|does not have) (["'\w: -_]+) (role)/i, (msg) ->
     name    = msg.match[1].trim()
