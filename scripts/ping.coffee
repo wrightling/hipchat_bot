@@ -23,6 +23,6 @@ module.exports = (robot) ->
       process.exit 0
     else
       roles = msg.envelope.user.roles
-      msg.send "User #{msg.envelope.user.id} has roles #{roles}"
+      msg.send "User #{msg.envelope.user.id} has roles #{msg.envelope.user.roles}"
       msg.send "You do not have permission to kill me"
 
