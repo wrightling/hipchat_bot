@@ -22,8 +22,8 @@ module.exports = (robot) ->
       msg.send "Goodbye, cruel world."
       process.exit 0
     else
-      roles = msg.envelope.user.roles
       user = robot.brain.userForId(msg.envelope.user.id)
+      msg.send "#{user.id}, #{user.name}, #{user.roles}"
       msg.send "User #{msg.envelope.user.id} has roles #{user.roles}"
       msg.send "You do not have permission to kill me"
 

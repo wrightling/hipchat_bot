@@ -1,1 +1,1 @@
-web: bin/hubot -a hipchat -n dude
+web: bin/hubot -a hipchat -n kitt
