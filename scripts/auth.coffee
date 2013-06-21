@@ -56,6 +56,7 @@ module.exports = (robot) ->
 
     unless name.toLowerCase() in ['', 'who', 'what', 'where', 'when', 'why']
       user = robot.brain.userForName(name)
+      msg.send "user? #{user?}, #{user.id}"
       return msg.reply "#{name} does not exist" unless user?
       user.roles or= []
 
