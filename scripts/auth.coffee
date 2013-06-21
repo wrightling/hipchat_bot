@@ -46,6 +46,12 @@ module.exports = (robot) ->
         for role in roles
           return true if role in user.roles
       return false
+    isAdmin: (user) ->
+      user = robot.brain.userForId(user.id)
+      if user? and user.name.toLowerCase() in admins
+        return true
+      else
+        return false
 
   robot.auth = new Auth
 
