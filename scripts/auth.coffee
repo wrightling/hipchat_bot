@@ -48,7 +48,7 @@ module.exports = (robot) ->
       return false
     isAdmin: (user) ->
       user = robot.brain.userForId(user.id)
-      if user? and user.name.toLowerCase() in admins
+      if user? and user.id.toString() in admins
         return true
       else
         return false
@@ -71,7 +71,7 @@ module.exports = (robot) ->
           msg.reply "Sorry, the 'admin' role can only be defined in the HUBOT_AUTH_ADMIN env variable."
         else
           myRoles = msg.message.user.roles or []
-          if msg.message.user.name.toLowerCase() in admins
+          if msg.message.user.id.toString() in admins
             user.roles.push(newRole)
             msg.reply "Ok, #{name} has the '#{newRole}' role."
           else
