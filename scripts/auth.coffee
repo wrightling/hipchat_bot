@@ -65,7 +65,7 @@ module.exports = (robot) ->
           msg.reply "Sorry, the 'admin' role can only be defined in the HUBOT_AUTH_ADMIN env variable."
         else
           myRoles = msg.message.user.roles or []
-          if msg.message.user.id.toString() in admins
+          if msg.message.user.name.toLowerCase() in admins
             user.roles.push(newRole)
             msg.reply "Ok, #{name} has the '#{newRole}' role."
           else
