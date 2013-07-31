@@ -77,7 +77,6 @@ module.exports = (robot) ->
         if data.build.status == 'SUCCESS'
           if data.name in @failing
             build = "was restored"
-            robot.send envelope, "woop2"
           else
             build = "suceeded"
           robot.send envelope, "#{data.name} build ##{data.build.number} #{build} (#{encodeURI(data.build.full_url)})"  if shouldNotify(envelope.notstrat, data, @failing)
