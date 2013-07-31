@@ -63,7 +63,7 @@ module.exports = (robot) ->
     envelope.user.type = query.type if query.type
     envelope.notstrat = query.notstrat if query.notstrat 
     try
-      console.log "jenkins-notify request body: #{JSON.stringify(req.body)}"
+      #console.log "jenkins-notify request body: #{JSON.stringify(req.body)}"
       data = req.body
 
       if data.build.phase == 'FINISHED'
