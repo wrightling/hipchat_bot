@@ -146,13 +146,13 @@ jenkinsList = (msg) ->
             msg.send error
 
 module.exports = (robot) ->
-  robot.respond /jenkins build ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
+  robot.respond /j(?:enkins)? build ([\w\.\-_ ]+)(, (.+))?/i, (msg) ->
     jenkinsBuild(msg)
 
-  robot.respond /jenkins list( (.+))?/i, (msg) ->
+  robot.respond /j(?:enkins)? list( (.+))?/i, (msg) ->
     jenkinsList(msg)
 
-  robot.respond /jenkins describe (.*)/i, (msg) ->
+  robot.respond /j(?:enkins)? describe (.*)/i, (msg) ->
     jenkinsDescribe(msg)
 
   robot.jenkins = {
