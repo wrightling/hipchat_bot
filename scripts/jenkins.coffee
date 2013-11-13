@@ -2,7 +2,7 @@
 #   Interact with your Jenkins CI server
 #
 # Dependencies:
-#   None
+#   easy-table
 #
 # Configuration:
 #   HUBOT_JENKINS_URL
@@ -13,17 +13,36 @@
 #   hubot jenkins build <job>, <params> - builds the specified Jenkins job with parameters as key=value&key2=value2
 #   hubot jenkins list <filter> - lists Jenkins jobs
 #   hubot jenkins describe <job> - Describes the specified Jenkins job
+#   hubot jenkins aliases - list known aliases for jenkins jobs
 
 #
 # Author:
 #   dougcole
 
 querystring = require 'querystring'
+Table = require 'easy-table'
+
+jobAliases =
+  '06admin': 'LS DEPLOY NWLTEST06 Admin (trunk)'
+  '06comm' : 'LS-DEPLOY-NWLTEST06-Commerce-(trunk)'
+  '06rws'  : 'LS DEPLOY NWLTEST06 Corp Regional (trunk)'
+  '06sites': 'LS DEPLOY NWLTEST06 Sites (trunk)'
+  '06style': 'LS DEPLOY NWLTEST06 Style Guide (trunk)'
+  '06tools': 'LS DEPLOY NWLTEST06 Tools (trunk)'
+  '10admin': 'LS DEPLOY NWLTEST10 Admin (trunk)'
+  '10comm' : 'LS-DEPLOY-NWLTEST10-Commerce-(trunk)'
+  '10rws'  : 'LS DEPLOY NWLTEST10 Corp Regional (trunk)'
+  '10sites': 'LS DEPLOY NWLTEST10 Sites (trunk)'
+  '10style': 'LS DEPLOY NWLTEST10 Style Guide (trunk)'
+  '10tools': 'LS DEPLOY NWLTEST10 Tools (trunk)'
 
 jenkinsBuild = (msg) ->
     url = process.env.HUBOT_JENKINS_URL
     job = querystring.escape msg.match[1]
     params = msg.match[3]
+
+    if jobAliases[job] != undefined
+      job = jobAliases[job]
 
     path = if params then "#{url}/job/#{job}/buildWithParameters?#{params}" else "#{url}/job/#{job}/build"
 
@@ -145,6 +164,9 @@ jenkinsList = (msg) ->
           catch error
             msg.send error
 
+jenkinsAliases = (msg) ->
+  msg.send Table.printObj jobAliases
+
 module.exports = (robot) ->
   robot.respond /j(?:enkins)? build ([\w\.\-_ \(\)]+)(, (.+))?/i, (msg) ->
     jenkinsBuild(msg)
@@ -154,6 +176,9 @@ module.exports = (robot) ->
 
   robot.respond /j(?:enkins)? describe (.*)/i, (msg) ->
     jenkinsDescribe(msg)
+
+  robot.respond /j(?:enkins)? aliases/i, (msg) ->
+    jenkinsAliases(msg)
 
   robot.jenkins = {
     list: jenkinsList,
