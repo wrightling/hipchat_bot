@@ -29,20 +29,22 @@ jobAliases =
   '06sites': 'LS DEPLOY NWLTEST06 Sites (trunk)'
   '06style': 'LS DEPLOY NWLTEST06 Style Guide (trunk)'
   '06tools': 'LS DEPLOY NWLTEST06 Tools (trunk)'
-  '10admin': 'LS DEPLOY NWLTEST10 Admin (trunk)'
-  '10comm' : 'LS-DEPLOY-NWLTEST10-Commerce-(trunk)'
-  '10rws'  : 'LS DEPLOY NWLTEST10 Corp Regional (trunk)'
-  '10sites': 'LS DEPLOY NWLTEST10 Sites (trunk)'
-  '10style': 'LS DEPLOY NWLTEST10 Style Guide (trunk)'
-  '10tools': 'LS DEPLOY NWLTEST10 Tools (trunk)'
+  '10admin': 'WO DEPLOY NWLTEST10 Admin (trunk)'
+  '10comm' : 'WO-DEPLOY-NWLTEST10-Commerce-(trunk)'
+  '10rws'  : 'WO DEPLOY NWLTEST10 Corp Regional (trunk)'
+  '10sites': 'WO DEPLOY NWLTEST10 Sites (trunk)'
+  '10style': 'WO DEPLOY NWLTEST10 Style Guide (trunk)'
+  '10tools': 'WO DEPLOY NWLTEST10 Tools (trunk)'
 
 jenkinsBuild = (msg) ->
     url = process.env.HUBOT_JENKINS_URL
-    job = querystring.escape msg.match[1]
+    job =  msg.match[1]
     params = msg.match[3]
 
     if jobAliases[job] != undefined
       job = jobAliases[job]
+
+    job = querystring.escape job
 
     path = if params then "#{url}/job/#{job}/buildWithParameters?#{params}" else "#{url}/job/#{job}/build"
 
@@ -65,6 +67,9 @@ jenkinsBuild = (msg) ->
 jenkinsDescribe = (msg) ->
     url = process.env.HUBOT_JENKINS_URL
     job = msg.match[1]
+
+    if jobAliases[job] != undefined
+      job = jobAliases[job]
 
     path = "#{url}/job/#{job}/api/json"
 
