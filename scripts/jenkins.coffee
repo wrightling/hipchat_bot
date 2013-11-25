@@ -53,9 +53,7 @@ jenkinsBuild = (msg) ->
 
     req = msg.http(path)
 
-    if process.env.HUBOT_JENKINS_AUTH
-      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
-      req.headers Authorization: "Basic #{auth}"
+    addAuthentication req
 
     req.header('Content-Length', 0)
     req.post() (err, res, body) ->
@@ -78,9 +76,7 @@ jenkinsDescribe = (msg) ->
 
     req = msg.http(path)
 
-    if process.env.HUBOT_JENKINS_AUTH
-      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
-      req.headers Authorization: "Basic #{auth}"
+    addAuthentication req
 
     req.header('Content-Length', 0)
     req.get() (err, res, body) ->
@@ -124,9 +120,8 @@ jenkinsDescribe = (msg) ->
 
             path = "#{content.lastBuild.url}/api/json"
             req = msg.http(path)
-            if process.env.HUBOT_JENKINS_AUTH
-              auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
-              req.headers Authorization: "Basic #{auth}"
+
+            addAuthentication req
 
             req.header('Content-Length', 0)
             req.get() (err, res, body) ->
@@ -153,9 +148,7 @@ jenkinsList = (msg) ->
     filter = new RegExp(msg.match[2], 'i')
     req = msg.http("#{url}/api/json")
 
-    if process.env.HUBOT_JENKINS_AUTH
-      auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
-      req.headers Authorization: "Basic #{auth}"
+    addAuthentication req
 
     req.get() (err, res, body) ->
         response = ""
@@ -174,6 +167,11 @@ jenkinsList = (msg) ->
 
 jenkinsAliases = (msg) ->
   msg.send Table.printObj jobAliases
+
+addAuthentication = (req) ->
+  if process.env.HUBOT_JENKINS_AUTH
+    auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
+    req.headers Authorization: "Basic #{auth}"
 
 module.exports = (robot) ->
   robot.respond /j(?:enkins)? build ([\w\.\-_ \(\)]+)(, (.+))?/i, (msg) ->
