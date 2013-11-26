@@ -84,64 +84,68 @@ jenkinsDescribe = (msg) ->
       msg.send "Jenkins says: #{err}"
     else
       response = ""
+
       try
         content = JSON.parse(body)
-        response += "JOB: #{content.displayName}\n"
-
-        if content.description
-          response += "DESCRIPTION: #{content.description}\n"
-
-        response += "ENABLED: #{content.buildable}\n"
-        response += "STATUS: #{content.color}\n"
-
-        tmpReport = ""
-        if content.healthReport.length > 0
-          for report in content.healthReport
-            tmpReport += "\n  #{report.description}"
-        else
-          tmpReport = " unknown"
-        response += "HEALTH: #{tmpReport}\n"
-
-        parameters = ""
-        for item in content.actions
-          if item.parameterDefinitions
-            for param in item.parameterDefinitions
-              tmpDescription = if param.description then " - #{param.description} " else ""
-              tmpDefault = if param.defaultParameterValue then " (default=#{param.defaultParameterValue.value})" else ""
-              parameters += "\n  #{param.name}#{tmpDescription}#{tmpDefault}"
-
-        if parameters != ""
-          response += "PARAMETERS: #{parameters}\n"
-
-        msg.send response
-
-        if not content.lastBuild
-          return
-
-        path = "#{content.lastBuild.url}/api/json"
-        req = msg.http(path)
-
-        addAuthentication req
-
-        req.header('Content-Length', 0)
-        req.get() (err, res, body) ->
-          if err
-            msg.send "Jenkins says: #{err}"
-          else
-            response = ""
-            try
-              content = JSON.parse(body)
-              # console.log(JSON.stringify(content, null, 4))
-              jobstatus = content.result || 'PENDING'
-              jobdate = new Date(content.timestamp);
-              response += "LAST JOB: #{jobstatus}, #{jobdate}\n"
-
-              msg.send response
-            catch error
-              msg.send "error: #{error}"
-
       catch error
-        msg.send "error: #{error}"
+        msg.send "error parsing JSON.\n error=#{error}.\n body=#{body}"
+        return
+
+      response += "JOB: #{content.displayName}\n"
+
+      if content.description
+        response += "DESCRIPTION: #{content.description}\n"
+
+      response += "ENABLED: #{content.buildable}\n"
+      response += "STATUS: #{content.color}\n"
+
+      tmpReport = ""
+      if content.healthReport.length > 0
+        for report in content.healthReport
+          tmpReport += "\n  #{report.description}"
+      else
+        tmpReport = " unknown"
+      response += "HEALTH: #{tmpReport}\n"
+
+      parameters = ""
+      for item in content.actions
+        if item.parameterDefinitions
+          for param in item.parameterDefinitions
+            tmpDescription = if param.description then " - #{param.description} " else ""
+            tmpDefault = if param.defaultParameterValue then " (default=#{param.defaultParameterValue.value})" else ""
+            parameters += "\n  #{param.name}#{tmpDescription}#{tmpDefault}"
+
+      if parameters != ""
+        response += "PARAMETERS: #{parameters}\n"
+
+      msg.send response
+
+      if not content.lastBuild
+        return
+
+      path = "#{content.lastBuild.url}/api/json"
+      req = msg.http(path)
+
+      addAuthentication req
+
+      req.header('Content-Length', 0)
+      req.get() (err, res, body) ->
+        if err
+          msg.send "Jenkins says: #{err}"
+        else
+          response = ""
+
+          try
+            content = JSON.parse(body)
+          catch error
+            msg.send "error parsing JSON.\n error=#{error}.\n body=#{body}"
+            return
+
+          jobstatus = content.result || 'PENDING'
+          jobdate = new Date(content.timestamp);
+          response += "LAST JOB: #{jobstatus}, #{jobdate}\n"
+
+          msg.send response
 
 jenkinsList = (msg) ->
   url = process.env.HUBOT_JENKINS_URL
@@ -157,13 +161,14 @@ jenkinsList = (msg) ->
     else
       try
         content = JSON.parse(body)
-        for job in content.jobs
-          state = if job.color == "red" then "FAIL" else "PASS"
-          if filter.test job.name
-            response += "#{state} #{job.name}\n"
-        msg.send response
       catch error
-        msg.send error
+        msg.send "error parsing JSON.\n error=#{error}.\n body=#{body}"
+
+      for job in content.jobs
+        state = if job.color == "red" then "FAIL" else "PASS"
+        if filter.test job.name
+          response += "#{state} #{job.name}\n"
+      msg.send response
 
 jenkinsAliases = (msg) ->
   msg.send Table.printObj jobAliases
