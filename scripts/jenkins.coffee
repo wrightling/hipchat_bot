@@ -17,7 +17,7 @@
 
 #
 # Author:
-#   dougcole
+#   dougcole, wrightling
 
 querystring = require 'querystring'
 Table = require 'easy-table'
