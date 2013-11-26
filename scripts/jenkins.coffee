@@ -7,6 +7,7 @@
 # Configuration:
 #   HUBOT_JENKINS_URL
 #   HUBOT_JENKINS_AUTH
+#   HUBOT_JENKINS_POLL_INTERVAL
 #
 # Commands:
 #   hubot jenkins build <job> - builds the specified Jenkins job
@@ -21,6 +22,7 @@
 
 querystring = require 'querystring'
 Table = require 'easy-table'
+pollInterval = process.env.HUBOT_JENKINS_POLL_INTERVAL
 
 jobAliases =
   '06admin'    : 'LS DEPLOY NWLTEST06 Admin (trunk)'
@@ -40,112 +42,39 @@ jobAliases =
   'emgr'       : 'CORE5_DEPLOY_nwl-eventmanager_(trunk)'
 
 jenkinsBuild = (msg) ->
-  url = process.env.HUBOT_JENKINS_URL
-  job =  msg.match[1]
-  params = msg.match[3]
+  req = prepRequest msg, (url, job) ->
+    params = msg.match[3]
+    if params then "#{url}/job/#{job}/buildWithParameters?#{params}" else "#{url}/job/#{job}/build"
 
-  if jobAliases[job] != undefined
-    job = jobAliases[job]
-
-  job = querystring.escape job
-
-  path = if params then "#{url}/job/#{job}/buildWithParameters?#{params}" else "#{url}/job/#{job}/build"
-
-  req = msg.http(path)
-
-  addAuthentication req
-
-  req.header('Content-Length', 0)
   req.post() (err, res, body) ->
     if err
       msg.send "Jenkins says: #{err}"
       console.log("Jenkins error = #{err}")
     else if 200 <= res.statusCode < 400
-      msg.send "#{res.statusCode} Build started for #{job} #{res.headers.location}"
+      msg.send "#{res.statusCode} Build started for #{req.job} #{res.headers.location}"
+      setTimeout startPollingForBuildStatus, pollInterval, msg, req.url, req.job
     else
       msg.send "Jenkins says: Status=#{res.statusCode} #{body}"
 
 jenkinsDescribe = (msg) ->
-  url = process.env.HUBOT_JENKINS_URL
-  job = msg.match[1]
+  req = prepRequest msg, (url, job) ->
+    "#{url}/job/#{job}/api/json"
 
-  if jobAliases[job] != undefined
-    job = jobAliases[job]
-
-  path = "#{url}/job/#{job}/api/json"
-
-  req = msg.http(path)
-
-  addAuthentication req
-
-  req.header('Content-Length', 0)
   req.get() (err, res, body) ->
     if err
       msg.send "Jenkins says: #{err}"
     else
-      response = ""
-
       try
         content = JSON.parse(body)
       catch error
         msg.send "error parsing JSON.\n error=#{error}.\n body=#{body}"
         return
 
-      response += "JOB: #{content.displayName}\n"
+      msg.send parseDescription content
 
-      if content.description
-        response += "DESCRIPTION: #{content.description}\n"
-
-      response += "ENABLED: #{content.buildable}\n"
-      response += "STATUS: #{content.color}\n"
-
-      tmpReport = ""
-      if content.healthReport.length > 0
-        for report in content.healthReport
-          tmpReport += "\n  #{report.description}"
-      else
-        tmpReport = " unknown"
-      response += "HEALTH: #{tmpReport}\n"
-
-      parameters = ""
-      for item in content.actions
-        if item.parameterDefinitions
-          for param in item.parameterDefinitions
-            tmpDescription = if param.description then " - #{param.description} " else ""
-            tmpDefault = if param.defaultParameterValue then " (default=#{param.defaultParameterValue.value})" else ""
-            parameters += "\n  #{param.name}#{tmpDescription}#{tmpDefault}"
-
-      if parameters != ""
-        response += "PARAMETERS: #{parameters}\n"
-
-      msg.send response
-
-      if not content.lastBuild
-        return
-
-      path = "#{content.lastBuild.url}/api/json"
-      req = msg.http(path)
-
-      addAuthentication req
-
-      req.header('Content-Length', 0)
-      req.get() (err, res, body) ->
-        if err
-          msg.send "Jenkins says: #{err}"
-        else
-          response = ""
-
-          try
-            content = JSON.parse(body)
-          catch error
-            msg.send "error parsing JSON.\n error=#{error}.\n body=#{body}"
-            return
-
-          jobstatus = content.result || 'PENDING'
-          jobdate = new Date(content.timestamp);
-          response += "LAST JOB: #{jobstatus}, #{jobdate}\n"
-
-          msg.send response
+      if content.lastBuild
+        checkBuildStatus msg, content.lastBuild.url, true, false, (jobStatus, jobDate) ->
+          "LAST JOB: #{jobStatus}, #{jobDate}\n"
 
 jenkinsList = (msg) ->
   url = process.env.HUBOT_JENKINS_URL
@@ -177,6 +106,108 @@ addAuthentication = (req) ->
   if process.env.HUBOT_JENKINS_AUTH
     auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
     req.headers Authorization: "Basic #{auth}"
+
+prepRequest = (msg, pathBuilder) ->
+  url = process.env.HUBOT_JENKINS_URL
+  job = msg.match[1]
+
+  if jobAliases[job] != undefined
+    job = jobAliases[job]
+
+  job = querystring.escape job
+
+  path = pathBuilder(url, job)
+
+  req = msg.http(path)
+  req.url = url
+  req.job = job
+
+  addAuthentication req
+
+  req.header('Content-Length', 0)
+
+checkBuildStatus = (msg, url, reportPending, pollIfNotDone, respond) ->
+  path = "#{url}/api/json"
+  req = msg.http(path)
+
+  addAuthentication req
+
+  req.header('Content-Length', 0)
+  req.get() (err, res, body) ->
+    if err
+      msg.send "http request reported an error in #checkBuildStatus: #{err}"
+    else
+      response = ""
+
+      try
+        content = JSON.parse(body)
+      catch error
+        msg.send "error parsing JSON in #checkBuildStatus.\n error=#{error}.\n body=#{body}"
+        return
+
+      jobstatus = content.result || 'PENDING'
+      jobdate = new Date(content.timestamp);
+      response += respond(jobstatus, jobdate)
+
+      if content.result || reportPending
+        msg.send response
+      else if pollIfNotDone
+        pollBuildStatus msg, url, pollInterval
+
+startPollingForBuildStatus = (msg, url, job) ->
+  req = prepRequest msg, (url, job) ->
+    "#{url}/job/#{job}/api/json"
+
+  req.get() (err, res, body) ->
+    if err
+      msg.send "Error in Jenkins' response for #{url} and #{job}, #{err}"
+    else
+      try
+        content = JSON.parse(body)
+      catch error
+        msg.send "error parsing JSON in #pollBuildStatus.\n error=#{error}.\n body=#{body}"
+        return
+
+      if content.lastBuild
+        pollBuildStatus msg, content.lastBuild.url, 0
+      else
+        msg.send "Went to poll for build at #{url}, but no lastBuild found in Jenkins"
+
+pollBuildStatus = (msg, url, interval) ->
+  setTimeout checkBuildStatus, interval, msg, url, false, true, (jobStatus, jobDate) ->
+    "Build complete for #{url} with status #{jobStatus} at #{jobDate}"
+
+parseDescription = (content) ->
+  response = ""
+
+  response += "JOB: #{content.displayName}\n"
+
+  if content.description
+    response += "DESCRIPTION: #{content.description}\n"
+
+  response += "ENABLED: #{content.buildable}\n"
+  response += "STATUS: #{content.color}\n"
+
+  tmpReport = ""
+  if content.healthReport.length > 0
+    for report in content.healthReport
+      tmpReport += "\n  #{report.description}"
+  else
+    tmpReport = " unknown"
+  response += "HEALTH: #{tmpReport}\n"
+
+  parameters = ""
+  for item in content.actions
+    if item.parameterDefinitions
+      for param in item.parameterDefinitions
+        tmpDescription = if param.description then " - #{param.description} " else ""
+        tmpDefault = if param.defaultParameterValue then " (default=#{param.defaultParameterValue.value})" else ""
+        parameters += "\n  #{param.name}#{tmpDescription}#{tmpDefault}"
+
+  if parameters != ""
+    response += "PARAMETERS: #{parameters}\n"
+
+  response
 
 module.exports = (robot) ->
   robot.respond /j(?:enkins)? build ([\w\.\-_ \(\)]+)(, (.+))?/i, (msg) ->
