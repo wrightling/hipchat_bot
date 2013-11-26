@@ -12,9 +12,11 @@
 # Commands:
 #   hubot jenkins build <job> - builds the specified Jenkins job
 #   hubot jenkins build <job>, <params> - builds the specified Jenkins job with parameters as key=value&key2=value2
+#   hubot jenkins pack <package> - builds a set of jobs (a build package)
 #   hubot jenkins list <filter> - lists Jenkins jobs
 #   hubot jenkins describe <job> - Describes the specified Jenkins job
 #   hubot jenkins aliases - list known aliases for jenkins jobs
+#   hubot jenkins packages - list known build packages
 
 #
 # Author:
@@ -41,11 +43,25 @@ jobAliases =
   '10tools'    : 'WO DEPLOY NWLTEST10 Tools (trunk)'
   'emgr'       : 'CORE5_DEPLOY_nwl-eventmanager_(trunk)'
 
+buildPackages =
+  'admin'    : ['06admin'    , '10admin']
+  'ecomm'    : ['06ecomm'    , '10ecomm']
+  'rws'      : ['06rws'      , '10rws']
+  'sites'    : ['06sites'    , '10sites']
+  'services' : ['06services' , '10services']
+  'style'    : ['06style'    , '10style']
+  'tools'    : ['06tools'    , '10tools']
+
 jenkinsBuild = (msg) ->
-  req = prepRequest msg, (url, job) ->
+  job = msg.match[1]
+  req = prepRequest msg, job, (url, job) ->
     params = msg.match[3]
     if params then "#{url}/job/#{job}/buildWithParameters?#{params}" else "#{url}/job/#{job}/build"
+  req.job = job
 
+  buildJob msg, req
+
+buildJob = (msg, req) ->
   req.post() (err, res, body) ->
     if err
       msg.send "Jenkins says: #{err}"
@@ -56,8 +72,25 @@ jenkinsBuild = (msg) ->
     else
       msg.send "Jenkins says: Status=#{res.statusCode} #{body}"
 
+buildJobFromPackage = (msg, job) ->
+  req = prepRequest msg, job, (url, job) ->
+    "#{url}/job/#{job}/build"
+  req.job = job
+
+  buildJob msg, req
+
+jenkinsBuildPackage = (msg) ->
+  packName = msg.match[1]
+
+  if buildPackages[packName]
+    for job in buildPackages[packName]
+      buildJobFromPackage msg, job
+  else
+    msg.send "There is no build package '#{packName}'. Thanks for playing - check '@kitt j packages' for the full list of available build packages."
+
 jenkinsDescribe = (msg) ->
-  req = prepRequest msg, (url, job) ->
+  job = msg.match[1]
+  req = prepRequest msg, job, (url, job) ->
     "#{url}/job/#{job}/api/json"
 
   req.get() (err, res, body) ->
@@ -102,14 +135,16 @@ jenkinsList = (msg) ->
 jenkinsAliases = (msg) ->
   msg.send Table.printObj jobAliases
 
+jenkinsPackages = (msg) ->
+  msg.send Table.printObj buildPackages
+
 addAuthentication = (req) ->
   if process.env.HUBOT_JENKINS_AUTH
     auth = new Buffer(process.env.HUBOT_JENKINS_AUTH).toString('base64')
     req.headers Authorization: "Basic #{auth}"
 
-prepRequest = (msg, pathBuilder) ->
+prepRequest = (msg, job, pathBuilder) ->
   url = process.env.HUBOT_JENKINS_URL
-  job = msg.match[1]
 
   if jobAliases[job] != undefined
     job = jobAliases[job]
@@ -120,7 +155,6 @@ prepRequest = (msg, pathBuilder) ->
 
   req = msg.http(path)
   req.url = url
-  req.job = job
 
   addAuthentication req
 
@@ -155,7 +189,7 @@ checkBuildStatus = (msg, url, reportPending, pollIfNotDone, respond) ->
         pollBuildStatus msg, url, pollInterval
 
 startPollingForBuildStatus = (msg, url, job) ->
-  req = prepRequest msg, (url, job) ->
+  req = prepRequest msg, job, (url, job) ->
     "#{url}/job/#{job}/api/json"
 
   req.get() (err, res, body) ->
@@ -221,6 +255,12 @@ module.exports = (robot) ->
 
   robot.respond /j(?:enkins)? aliases/i, (msg) ->
     jenkinsAliases(msg)
+
+  robot.respond /j(?:enkins)? packages/i, (msg) ->
+    jenkinsPackages(msg)
+
+  robot.respond /j(?:enkins)? pack (.*)/i, (msg) ->
+    jenkinsBuildPackage(msg)
 
   robot.jenkins = {
     list: jenkinsList,
