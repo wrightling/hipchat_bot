@@ -28,6 +28,7 @@ pollInterval = process.env.HUBOT_JENKINS_POLL_INTERVAL
 
 jobAliases =
   '06admin'    : 'LS DEPLOY NWLTEST06 Admin (trunk)'
+  '06content'  : 'LS DEPLOY NWLTEST06 Content (trunk)'
   '06ecomm'    : 'LS-DEPLOY-NWLTEST06-Commerce-(trunk)'
   '06rws'      : 'LS DEPLOY NWLTEST06 Corp Regional (trunk)'
   '06sites'    : 'LS DEPLOY NWLTEST06 Sites (trunk)'
@@ -35,6 +36,7 @@ jobAliases =
   '06style'    : 'LS DEPLOY NWLTEST06 Style Guide (trunk)'
   '06tools'    : 'LS DEPLOY NWLTEST06 Tools (trunk)'
   '10admin'    : 'WO DEPLOY NWLTEST10 Admin (trunk)'
+  '10content'  : 'WO DEPLOY NWLTEST10 Content (trunk)'
   '10ecomm'    : 'WO-DEPLOY-NWLTEST10-Commerce-(trunk)'
   '10rws'      : 'WO DEPLOY NWLTEST10 Corp Regional (trunk)'
   '10services' : 'WO DEPLOY NWLTEST10 Services (trunk)'
@@ -42,9 +44,11 @@ jobAliases =
   '10style'    : 'WO DEPLOY NWLTEST10 Style Guide (trunk)'
   '10tools'    : 'WO DEPLOY NWLTEST10 Tools (trunk)'
   'emgr'       : 'CORE5_DEPLOY_nwl-eventmanager_(trunk)'
+  'nwl-ecomm'  : 'CORE5_DEPLOY_nwl-ecommerce_(trunk)'
 
 buildPackages =
   'admin'    : ['06admin'    , '10admin']
+  'content'  : ['06content'  , '10content']
   'ecomm'    : ['06ecomm'    , '10ecomm']
   'rws'      : ['06rws'      , '10rws']
   'sites'    : ['06sites'    , '10sites']
