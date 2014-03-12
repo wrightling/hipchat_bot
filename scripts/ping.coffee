@@ -14,6 +14,9 @@ module.exports = (robot) ->
   robot.respond /KING$/i, (msg) ->
     msg.send "KONG"
 
+  robot.respond /DEREK$/i, (msg) ->
+    msg.send "WHO?"
+
   robot.respond /ECHO (.*)$/i, (msg) ->
     msg.send msg.match[1]
 
