@@ -3,6 +3,8 @@
 #
 # Commands:
 #   hubot ping - Reply with pong
+#   hubot king - Reply with kong
+#   hubot derek - reply with who?
 #   hubot echo <text> - Reply back with <text>
 #   hubot time - Reply with current time
 #   hubot die - End hubot process
