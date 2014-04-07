@@ -74,7 +74,7 @@ buildJob = (msg, req) ->
       msg.send "#{res.statusCode} Build started for #{req.job} #{res.headers.location}"
       setTimeout startPollingForBuildStatus, pollInterval, msg, req.url, req.job
     else
-      msg.send "Jenkins says: Status=#{res.statusCode} #{body}"
+      console.log "jenkins buildJob says: Status=#{res.statusCode} #{body}"
 
 buildJobFromPackage = (msg, job) ->
   req = prepRequest msg, job, (url, job) ->
@@ -100,7 +100,7 @@ jenkinsDescribe = (msg) ->
   req.get() (err, res, body) ->
     if err
       msg.send "Jenkins says: #{err}"
-    else
+    else if 200 <= res.statusCode < 400
       try
         content = JSON.parse(body)
       catch error
@@ -112,6 +112,8 @@ jenkinsDescribe = (msg) ->
       if content.lastBuild
         checkBuildStatus msg, content.lastBuild.url, true, false, (jobStatus, jobDate) ->
           "LAST JOB: #{jobStatus}, #{jobDate}\n"
+    else
+      console.log "jenkinsDescribe says: Status=#{res.statusCode} #{body}"
 
 jenkinsList = (msg) ->
   url = process.env.HUBOT_JENKINS_URL
@@ -124,7 +126,7 @@ jenkinsList = (msg) ->
     response = ""
     if err
       msg.send "Jenkins says: #{err}"
-    else
+    else if 200 <= res.statusCode < 400
       try
         content = JSON.parse(body)
       catch error
@@ -135,6 +137,8 @@ jenkinsList = (msg) ->
         if filter.test job.name
           response += "#{state} #{job.name}\n"
       msg.send response
+    else
+      console.log "jenkinsList says: Status=#{res.statusCode} #{body}"
 
 jenkinsAliases = (msg) ->
   msg.send Table.printObj jobAliases
@@ -174,7 +178,7 @@ checkBuildStatus = (msg, url, reportPending, pollIfNotDone, respond) ->
   req.get() (err, res, body) ->
     if err
       msg.send "http request reported an error in #checkBuildStatus: #{err}"
-    else
+    else if 200 <= res.statusCode < 400
       response = ""
 
       try
@@ -191,6 +195,8 @@ checkBuildStatus = (msg, url, reportPending, pollIfNotDone, respond) ->
         msg.send response
       else if pollIfNotDone
         pollBuildStatus msg, url, pollInterval
+    else
+      console.log "jenkins checkBuildStatus says: Status=#{res.statusCode} #{body}"
 
 startPollingForBuildStatus = (msg, url, job) ->
   req = prepRequest msg, job, (url, job) ->
@@ -199,7 +205,7 @@ startPollingForBuildStatus = (msg, url, job) ->
   req.get() (err, res, body) ->
     if err
       msg.send "Error in Jenkins' response for #{url} and #{job}, #{err}"
-    else
+    else if 200 <= res.statusCode < 400
       try
         content = JSON.parse(body)
       catch error
@@ -210,6 +216,8 @@ startPollingForBuildStatus = (msg, url, job) ->
         pollBuildStatus msg, content.lastBuild.url, 0
       else
         msg.send "Went to poll for build at #{url}, but no lastBuild found in Jenkins"
+    else
+      console.log "jenkins startPollingForBuildStatus says: Status=#{res.statusCode} #{body}"
 
 pollBuildStatus = (msg, url, interval) ->
   setTimeout checkBuildStatus, interval, msg, url, false, true, (jobStatus, jobDate) ->
