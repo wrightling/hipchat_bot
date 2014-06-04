@@ -21,7 +21,6 @@ wsStatus = (msg) ->
   exec = require('child_process').exec
   command = "net rpc service status #{service} -S #{server} -U '#{username}%#{password}'"
 
-  msg.send msg.match
   exec command, (error, stdout, stderr) ->
     msg.send "error=#{error}" if error
     msg.send "stdout=#{stdout}" if stdout
