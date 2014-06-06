@@ -10,6 +10,9 @@
 # Commands:
 #   hubot s|service status <server> <service>
 #   hubot s|service list - list all supported services and their aliases
+#   hubot s|service start <alias>
+#   hubot s|service stop <alias>
+#   hubot s|service restart <alias>
 #
 # Author:
 #   wrightling
@@ -17,8 +20,16 @@
 Table = require 'easy-table'
 
 serviceAliases =
-  '06ecomm' : [{'service' : 'JBoss-Commerce',  'server' : 'nwltest06n2'},
-               {'service' : 'JBoss-Commerce2', 'server' : 'nwltest06n2'}]
+  '06ecomm' : [{'service' : 'JBoss-Commerce2', 'server' : 'nwltest06n2'}]
+
+  # '06ecomm' : [{'service' : 'JBoss-Commerce',  'server' : 'nwltest06n2'},
+  #              {'service' : 'JBoss-Commerce2', 'server' : 'nwltest06n2'}]
+
+aliasIsValid = (msg, alias) ->
+  if serviceAliases[alias] == undefined
+    msg.send "Invalid alias '#{alias}'. Check available aliases with the list command"
+  else
+    true
 
 wsStatus = (msg) ->
   server = msg.match[1]
@@ -27,16 +38,30 @@ wsStatus = (msg) ->
 
 wsStatusByAlias = (msg) ->
   alias = msg.match[1]
-  if serviceAliases[alias] == undefined
-    msg.send "Invalid alias #{alias}.  Check available aliases with the list command"
-
-  for serviceInfo in serviceAliases[alias]
-    status msg, serviceInfo['server'], serviceInfo['service']
+  if aliasIsValid msg, alias
+    for serviceInfo in serviceAliases[alias]
+      status msg, serviceInfo['server'], serviceInfo['service']
 
 status = (msg, server, service) ->
-  command = "net rpc service status #{service} -S #{server} -U '#{username()}%#{password()}'"
+  shellOutServiceRPC msg, 'status', server, service
 
-  shellOut msg, command
+wsStartService = (msg) ->
+  alias = msg.match[1]
+  if aliasIsValid msg, alias
+    for serviceInfo in serviceAliases[alias]
+      shellOutServiceRPC msg, 'start', serviceInfo['server'], serviceInfo['service']
+
+wsStopService = (msg) ->
+  alias = msg.match[1]
+  if aliasIsValid msg, alias
+    for serviceInfo in serviceAliases[alias]
+      shellOutServiceRPC msg, 'stop', serviceInfo['server'], serviceInfo['service']
+
+wsRestartService = (msg) ->
+  alias = msg.match[1]
+  if aliasIsValid msg, alias
+    for serviceInfo in serviceAliases[alias]
+      shellOutServiceRPC msg, 'stop', serviceInfo['server'], serviceInfo['service'], 'start'
 
 wsListServices = (msg) ->
   table = new Table
@@ -49,13 +74,16 @@ wsListServices = (msg) ->
 
   msg.send table.toString()
 
-shellOut = (msg, command) ->
+shellOutServiceRPC = (msg, serviceCommand, server, service, nextCommand = undefined) ->
+  command = "net rpc service #{serviceCommand} #{service} -S #{server} -U '#{username()}%#{password()}'"
   exec = require('child_process').exec
 
   exec command, (error, stdout, stderr) ->
-    msg.send "error=#{error}" if error
+    msg.send "error=#{error}" if error?
     msg.send stdout if stdout
-    msg.send "stderr=#{stderr}" if stderr
+
+    if nextCommand?
+      shellOutServiceRPC msg, nextCommand, server, service unless error?
 
 username = () ->
   process.env.HUBOT_WINSERVICES_USERNAME
@@ -72,3 +100,12 @@ module.exports = (robot) ->
 
   robot.respond /(?:s|service) status (\S+)$/i, (msg) ->
     wsStatusByAlias msg
+
+  robot.respond /(?:s|service) start (\S+)$/i, (msg) ->
+    wsStartService msg
+
+  robot.respond /(?:s|service) stop (\S+)$/i, (msg) ->
+    wsStopService msg
+
+  robot.respond /(?:s|service) restart (\S+)$/i, (msg) ->
+    wsRestartService msg
