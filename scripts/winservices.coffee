@@ -8,8 +8,8 @@
 # Configuration:
 #
 # Commands:
-#   hubot ws|winservices status <server> <service>
-#   hubot ws|winservices list <server>
+#   hubot s|service status <server> <service>
+#   hubot s|service list - list all supported services and their aliases
 #
 # Author:
 #   wrightling
@@ -23,6 +23,17 @@ serviceAliases =
 wsStatus = (msg) ->
   server = msg.match[1]
   service = msg.match[2]
+  status msg, server, service
+
+wsStatusByAlias = (msg) ->
+  alias = msg.match[1]
+  if serviceAliases[alias] == undefined
+    msg.send "Invalid alias #{alias}.  Check available aliases with the list command"
+
+  for serviceInfo in serviceAliases[alias]
+    status msg, serviceInfo['server'], serviceInfo['service']
+
+status = (msg, server, service) ->
   command = "net rpc service status #{service} -S #{server} -U '#{username()}%#{password()}'"
 
   shellOut msg, command
@@ -53,8 +64,11 @@ password = () ->
   process.env.HUBOT_WINSERVICES_PASSWORD
 
 module.exports = (robot) ->
-  robot.respond /(?:ws|winservices) status (\S+) (\S+)/i, (msg) ->
+  robot.respond /(?:s|service) status (\S+) (\S+)/i, (msg) ->
     wsStatus msg
 
   robot.respond /(?:s|service) list/i, (msg) ->
     wsListServices msg
+
+  robot.respond /(?:s|service) status (\S+)$/i, (msg) ->
+    wsStatusByAlias msg
