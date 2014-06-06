@@ -2,6 +2,7 @@
 #   Control and Query Windows Services remotely from Linux
 #
 # Dependencies:
+#   easy-table
 #   Samba on the linux box hosting Hubot
 #
 # Configuration:
@@ -13,6 +14,12 @@
 # Author:
 #   wrightling
 
+Table = require 'easy-table'
+
+serviceAliases =
+  '06ecomm' : [{'service' : 'JBoss-Commerce',  'server' : 'nwltest06n2'},
+               {'service' : 'JBoss-Commerce2', 'server' : 'nwltest06n2'}]
+
 wsStatus = (msg) ->
   server = msg.match[1]
   service = msg.match[2]
@@ -20,11 +27,16 @@ wsStatus = (msg) ->
 
   shellOut msg, command
 
-wsList = (msg) ->
-  server = msg.match[1]
-  command = "net rpc service list -S #{server} -U '#{username()}%#{password()}'"
+wsListServices = (msg) ->
+  table = new Table
+  for alias, services of serviceAliases
+    for serviceInfo in services
+      table.cell 'Alias', alias
+      table.cell 'Service', serviceInfo['service']
+      table.cell 'Server', serviceInfo['server']
+      table.newRow()
 
-  shellOut msg, command
+  msg.send table.toString()
 
 shellOut = (msg, command) ->
   exec = require('child_process').exec
@@ -42,7 +54,7 @@ password = () ->
 
 module.exports = (robot) ->
   robot.respond /(?:ws|winservices) status (\S+) (\S+)/i, (msg) ->
-    wsStatus(msg)
+    wsStatus msg
 
-  robot.respond /(?:ws|winservices) list (\S+)/i, (msg) ->
-    wsList(msg)
+  robot.respond /(?:s|service) list/i, (msg) ->
+    wsListServices msg
