@@ -20,11 +20,10 @@
 Table = require 'easy-table'
 
 serviceAliases =
-  '06ecomm' : [{'service' : 'JBoss-Commerce2', 'server' : 'nwltest06n2'}]
-  '10ecomm' : [{'service' : 'JBoss-Commerce2', 'server' : 'nwltest10n2'}]
-
-  # '06ecomm' : [{'service' : 'JBoss-Commerce',  'server' : 'nwltest06n2'},
-  #              {'service' : 'JBoss-Commerce2', 'server' : 'nwltest06n2'}]
+  '06ecomm' : [{'service' : 'JBoss-Commerce',  'server' : 'nwltest06n2'},
+               {'service' : 'JBoss-Commerce2', 'server' : 'nwltest06n2'}]
+  '10ecomm' : [{'service' : 'JBoss-Commerce',  'server' : 'nwltest10n2'},
+               {'service' : 'JBoss-Commerce2', 'server' : 'nwltest10n2'}]
 
 aliasIsValid = (msg, alias) ->
   if serviceAliases[alias] == undefined
@@ -44,7 +43,7 @@ wsStatusByAlias = (msg) ->
       status msg, serviceInfo['server'], serviceInfo['service']
 
 status = (msg, server, service) ->
-  shellOutServiceRPC msg, 'status', server, service
+  shellOutServiceRPC msg, 'status', server, service, statusSuccessMessage
 
 wsStartService = (msg) ->
   alias = msg.match[1]
@@ -62,7 +61,7 @@ wsRestartService = (msg) ->
   alias = msg.match[1]
   if aliasIsValid msg, alias
     for serviceInfo in serviceAliases[alias]
-      shellOutServiceRPC msg, 'stop', serviceInfo['server'], serviceInfo['service'], 'start', 10000
+      shellOutServiceRPC msg, 'stop', serviceInfo['server'], serviceInfo['service'], shellOutSucessMessage, 'start', 10000
 
 wsListServices = (msg) ->
   table = new Table
@@ -75,17 +74,24 @@ wsListServices = (msg) ->
 
   msg.send table.toString()
 
-shellOutServiceRPC = (msg, serviceCommand, server, service, nextCommand = undefined, nextTimeout = 0) ->
+shellOutServiceRPC = (msg, serviceCommand, server, service, onSuccess = shellOutSucessMessage, nextCommand = undefined, nextTimeout = 0) ->
   command = "net rpc service #{serviceCommand} #{service} -S #{server} -U '#{username()}%#{password()}'"
   exec = require('child_process').exec
 
   exec command, (error, stdout, stderr) ->
     msg.send "error=#{error}" if error?
     console.log "WinServices error=#{error} from command=#{command}" if error?
-    msg.send stdout if stdout
+    msg.send onSuccess serviceCommand, server, service, command, stdout if stdout?
 
     if nextCommand?
       setTimeout shellOutServiceRPC, nextTimeout, msg, nextCommand, server, service unless error?
+
+shellOutSucessMessage = (serviceCommand, server, service, command, stdout) ->
+  "#{serviceCommand} request successful for service #{service} on #{server}"
+
+statusSuccessMessage = (serviceCommand, server, service, command, stdout) ->
+  successMessage = /\S+ service is running./i.exec stdout
+  "-> #{successMessage.toString()}"
 
 username = () ->
   process.env.HUBOT_WINSERVICES_USERNAME
