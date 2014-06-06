@@ -21,6 +21,7 @@ Table = require 'easy-table'
 
 serviceAliases =
   '06ecomm' : [{'service' : 'JBoss-Commerce2', 'server' : 'nwltest06n2'}]
+  '10ecomm' : [{'service' : 'JBoss-Commerce2', 'server' : 'nwltest10n2'}]
 
   # '06ecomm' : [{'service' : 'JBoss-Commerce',  'server' : 'nwltest06n2'},
   #              {'service' : 'JBoss-Commerce2', 'server' : 'nwltest06n2'}]
@@ -61,7 +62,7 @@ wsRestartService = (msg) ->
   alias = msg.match[1]
   if aliasIsValid msg, alias
     for serviceInfo in serviceAliases[alias]
-      shellOutServiceRPC msg, 'stop', serviceInfo['server'], serviceInfo['service'], 'start'
+      shellOutServiceRPC msg, 'stop', serviceInfo['server'], serviceInfo['service'], 'start', 10000
 
 wsListServices = (msg) ->
   table = new Table
@@ -74,16 +75,17 @@ wsListServices = (msg) ->
 
   msg.send table.toString()
 
-shellOutServiceRPC = (msg, serviceCommand, server, service, nextCommand = undefined) ->
+shellOutServiceRPC = (msg, serviceCommand, server, service, nextCommand = undefined, nextTimeout = 0) ->
   command = "net rpc service #{serviceCommand} #{service} -S #{server} -U '#{username()}%#{password()}'"
   exec = require('child_process').exec
 
   exec command, (error, stdout, stderr) ->
     msg.send "error=#{error}" if error?
+    console.log "WinServices error=#{error} from command=#{command}" if error?
     msg.send stdout if stdout
 
     if nextCommand?
-      shellOutServiceRPC msg, nextCommand, server, service unless error?
+      setTimeout shellOutServiceRPC, nextTimeout, msg, nextCommand, server, service unless error?
 
 username = () ->
   process.env.HUBOT_WINSERVICES_USERNAME
