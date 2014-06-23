@@ -45,6 +45,14 @@ jobAliases =
   '10tools'    : 'WO DEPLOY NWLTEST10 Tools (trunk)'
   'emgr'       : 'CORE5_DEPLOY_nwl-eventmanager_(trunk)'
   'nwl-ecomm'  : 'CORE5_DEPLOY_nwl-ecommerce_(trunk)'
+  '17admin'    : 'LS DEPLOY NWLTEST17 Admin (trunk)'
+  '17content'  : 'LS DEPLOY NWLTEST17 Content (trunk)'
+  '17ecomm'    : 'LS_DEPLOY_NWLTEST17_Commerce_trunk'
+  '17rws'      : 'LS DEPLOY NWLTEST17 Corp Regional (trunk)'
+  '17sites'    : 'LS DEPLOY NWLTEST17 Sites (trunk)'
+  '17services' : 'LS DEPLOY NWLTEST17 Services (trunk)'
+  '17style'    : 'LS DEPLOY NWLTEST17 Style Guide (trunk)'
+  '17tools'    : 'LS DEPLOY NWLTEST17 Tools (trunk)'
 
 buildPackages =
   'admin'    : ['06admin'    , '10admin']
