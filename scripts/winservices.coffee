@@ -24,6 +24,8 @@ serviceAliases =
                {'service' : 'JBoss-Commerce2', 'server' : 'nwltest06n2'}]
   '10ecomm' : [{'service' : 'JBoss-Commerce',  'server' : 'nwltest10n2'},
                {'service' : 'JBoss-Commerce2', 'server' : 'nwltest10n2'}]
+  'UATecomm': [{'service' : 'JBOSS-Commerce',  'server' : 'lsuatapp04'},
+               {'service' : 'JBOSS-Commerce2', 'server' : 'lsuatapp04'}]
 
 aliasIsValid = (msg, alias) ->
   if serviceAliases[alias] == undefined
