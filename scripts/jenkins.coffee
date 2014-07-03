@@ -53,6 +53,13 @@ jobAliases =
   '17services' : 'NWLTEST17 DEPLOY Services (trunk)'
   '17style'    : 'NWLTEST17 DEPLOY Style Guide (trunk)'
   '17tools'    : 'NWLTEST17 DEPLOY Tools (trunk)'
+  'LSUATadmin' : 'LS DEPLOY LSUAT Admin (trunk)'
+  'LSUATcontent' : 'LS DEPLOY LSUAT Content (trunk)'
+  'LSUATecomm' : 'LS-DEPLOY-LSUAT-Commerce-(trunk)'
+  'LSUATrws'   : 'LS DEPLOY LSUAT Corp Regional (trunk)'
+  'LSUATservices' : 'LS DEPLOY LSUAT Services (trunk)'
+  'LSUATsites' : 'LS DEPLOY LSUAT Sites (trunk)'
+  'LSUATtools' : 'LS DEPLOY LSUAT Tools (trunk)'
 
 buildPackages =
   'admin'    : ['06admin'    , '10admin']
